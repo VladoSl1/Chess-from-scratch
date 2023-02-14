@@ -1,0 +1,3 @@
+H:\_Programming\C++_Projects\Big Projects\Chess\Chess\Debug\Chess.exe
+D:\_Programming\C++_Projects\Big Projects\Chess\Chess\Debug\Chess.exe
+C:\Users\Vlado JR\Desktop\Chess\Chess\Debug\Chess.exe

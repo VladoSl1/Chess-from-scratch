@@ -1,0 +1,4 @@
+﻿  Board.cpp
+D:\_Programming\C++_Projects\Big Projects\Chess\Chess\Source\Board.cpp(266,57): warning C4244: 'argument': conversion from 'double' to 'const char', possible loss of data
+D:\_Programming\C++_Projects\Big Projects\Chess\Chess\Source\MoveGenerator.h(210): warning C4715: 'chess::movegen::GenerateMoves': not all control paths return a value
+  OpenGL Template.vcxproj -> D:\_Programming\C++_Projects\Big Projects\Chess\Chess\Debug\Chess.exe
