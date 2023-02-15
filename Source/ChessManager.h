@@ -19,6 +19,8 @@ namespace chess
 			return window->WindowShouldClose();
 		}
 
+		void startEndGame();
+
 	private:
 		graphics::Window* window;
 		graphics::Mouse* mouse;

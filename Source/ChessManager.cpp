@@ -67,6 +67,11 @@ namespace chess
 				if ((uchar)kd.state & (uchar)ButtonStates::Release)
 				{
 					board->EndPieceDrag(pos);
+
+					if (board->checkMate) {
+						startEndGame();
+					}
+
 					draggingPiece = false;
 				}
 
@@ -89,5 +94,10 @@ namespace chess
 				board->EndPieceDrag(-1);
 			}
 		}
+	}
+
+	void ChessManager::startEndGame()
+	{
+
 	}
 }

@@ -53,7 +53,7 @@ namespace chess
 		static PositionInfo* LoadPosition(const std::string& pos)
 		{
 			PositionInfo* posInfo = new PositionInfo;
-			std::vector<std::string> fenParts = splitStr(pos);
+			std::vector<std::string> fenParts = string::splitStr(pos);
 
 			posInfo->whiteOnMove		= fenParts[1] == "w";
 			posInfo->enPassant			= fenParts[3][0] != '-' ? ((fenParts[3][0] - 97) << 3) | (fenParts[3][1] - '0') : -1;

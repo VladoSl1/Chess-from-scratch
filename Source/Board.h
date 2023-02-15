@@ -7,7 +7,7 @@
 #include "fenutil.h"
 
 /*
-	- change rendering to batch rendering
+- change rendering to batch rendering
 
 */
 
@@ -38,6 +38,7 @@ namespace chess
 
 	public:
 		PositionInfo* posInfo;
+		bool checkMate;
 		graphics::GameObject g_pieces[64];
 
 		Board(Side orientation, pallet::SquarePallet* boardColorPallet, pallet::PiecePallet* piecePallet);
@@ -56,6 +57,8 @@ namespace chess
 		inline void SwitchOrientation() {
 			orient = orient == Side::white ? Side::black : Side::white;
 		}
+
+		bool IsCheckMate() const;
 
 	private:
 		Side					orient;
@@ -87,11 +90,8 @@ namespace chess
 
 		void UpdateKingState(bool color_w);
 		std::set<int> counterMoves;
-		std::set<int> pinnedPieces;
 		/* -2: two attacking, -1: no attacking, >=0: position of attacking */
 		int kingAttacker = -1;
-
-
 
 		/* Returns squares attacked by color 'w' */
 		AttackMap GetAttackedSquares(bool color_w) const;

@@ -21,11 +21,8 @@ using namespace graphics;
 namespace chess
 {
 	Board::Board(Side orientation, pallet::SquarePallet* boardColorPallet, pallet::PiecePallet* piecePallet)
+		: orient(orientation), boardColors(boardColorPallet), pieceTextures(piecePallet), checkMate(false)
 	{
-		orient			= orientation;
-		boardColors		= boardColorPallet;
-		pieceTextures	= piecePallet;
-
 		spriteRenderer = new SpriteRenderer(orient::Width, orient::Height, false);
 
 		InitGraphics(boardColorPallet);
@@ -109,15 +106,16 @@ namespace chess
 
 	void Board::StartPieceDrag(int pos, const math::vec2<>& coords)
 	{
-		if (Pieces::IsColor(posInfo->squares[pos], Pieces::White) == posInfo->whiteOnMove)
+		if (Pieces::IsColor(posInfo->squares[pos], Pieces::White) == posInfo->whiteOnMove &&
+			!vector::isIn(dict::keys(movegen::pinnedPieces), pos))
 		{
 			dragShift = coords - g_pieces[pos].position;
 			draggedPiece = pos;
 
-			std::set<int> intersect = std::set<int>();
+			std::set<int> intersect; // = std::set<int>();
 			possibleMoves = movegen::GenerateMoves(pos, posInfo);
 			
-			if (pinnedPieces.find())
+			//if ()
 
 			if (kingAttacker >= 0 && !Pieces::IsType(posInfo->squares[pos], Pieces::King))
 			{
@@ -125,19 +123,33 @@ namespace chess
 				std::set_intersection(possibleMoves.begin(), possibleMoves.end(),
 					counterMoves.begin(), counterMoves.end(), std::inserter(intersect, intersect.begin()));
 
+				for (auto i : counterMoves) {
+					std::cout << i << " ";
+				}
+				std::cout << "\n";
+
 				possibleMoves = intersect;
 			}
 
 			else
 			{
-				// king cannot go on attacked squares
 				if (Pieces::IsType(posInfo->squares[pos], Pieces::King))
 				{
 					std::vector<int> attackedSq = dict::keys(attackedSquares);
 					std::sort(attackedSq.begin(), attackedSq.end());
 
+					// king cannot go on attacked squares
 					std::set_difference(possibleMoves.begin(), possibleMoves.end(),
 						attackedSq.begin(), attackedSq.end(), std::inserter(intersect, intersect.begin()));
+
+					// king cannot castle when in check
+					if (kingAttacker != -1 &&
+						posInfo->castling & 0b1100 && Pieces::IsWhite(posInfo->squares[pos]) ||
+						posInfo->castling & 0b0011 && !Pieces::IsWhite(posInfo->squares[pos]))
+					{
+						intersect.erase(pos + 2);
+						intersect.erase(pos - 2);
+					}
 
 					possibleMoves = intersect;
 				}
@@ -169,6 +181,7 @@ namespace chess
 			posInfo->whiteOnMove ^= 1;
 
 			UpdateKingState(posInfo->whiteOnMove);
+			checkMate = IsCheckMate();
 		}
 		else
 			g_pieces[draggedPiece].position = orient::CoordsToRealCoords(orient::CoordsFromPos(draggedPiece));
@@ -186,8 +199,6 @@ namespace chess
 
 	void Board::MovePiece(int start, int end)
 	{
-		//bool w = Pieces::IsWhite(posInfo->squares[start]);//posInfo->whiteOnMove;
-
 		if (Pieces::IsType(posInfo->squares[start], Pieces::Pawn)) {
 			if (!PawnEnPassant(start, end))
 				posInfo->enPassant = 0;
@@ -215,8 +226,8 @@ namespace chess
 		g_pieces[end]				= g_pieces[start];
 		g_pieces[end].position		= g_squares[end].position;
 	}
-	
-	
+
+
 	void Board::UpdateKingState(bool color_w)
 	{
 		kingAttacker = -1;
@@ -233,10 +244,15 @@ namespace chess
 			counterMoves.insert(kingAttacker);
 			if (Pieces::IsSlidingPiece(posInfo->squares[kingAttacker]))
 			{
-				/* loop over direct connection of king-kingAttacker */
-				for (int i = min(kingAttacker % 8, kingPos % 8); i < max(kingAttacker % 8, kingPos % 8); ++i)
-					for (int j = int(min(kingAttacker / 8, kingPos / 8)); j < int(max(kingAttacker / 8, kingPos / 8)); ++j)
-						possibleMoves.insert(j * 8 + i);
+				int stepX = kingPos % 8 - kingAttacker % 8;
+				int stepY = int(kingPos / 8) - int(kingAttacker / 8);
+				int n_steps = max(stepX, stepY);
+
+				stepX = stepX < 0 ? -1 : (stepX > 0 ? 1 : 0);
+				stepY = stepY < 0 ? -1 : (stepY > 0 ? 1 : 0);
+				for (int i = 1; i < n_steps; ++i) {
+					counterMoves.insert(kingAttacker + stepX * i + 8 * stepY * i);
+				}
 			}
 		}
 	}
@@ -244,7 +260,7 @@ namespace chess
 	Board::AttackMap Board::GetAttackedSquares(bool color_w) const
 	{
 		AttackMap attackedSquareMap;
-		movegen::pinnedPieces = std::set<PinnedPiece>();
+		movegen::pinnedPieces.clear();
 
 		for (char piece : GetPieceSet(color_w)->pieces)
 			for (int square : movegen::GenerateMoves(piece, posInfo, true))
@@ -266,7 +282,7 @@ namespace chess
 		else if (end == posInfo->enPassant)
 		{
 			posInfo->squares[int(end + 8 * pow(-1, posInfo->whiteOnMove))] = 0;
-			GetPieceSet(!posInfo->whiteOnMove)->pieces.erase(end + 8 * pow(-1, posInfo->whiteOnMove));
+			GetPieceSet(!posInfo->whiteOnMove)->pieces.erase(char(end + 8 * pow(-1, posInfo->whiteOnMove)));
 		}
 
 		return false;
@@ -299,8 +315,15 @@ namespace chess
 
 	void Board::KingCastling(int start, int end)
 	{
-		//bool w = Pieces::IsColor(posInfo->squares[start], Pieces::White);
 		(posInfo->whiteOnMove ? white : black).kingPos = end;			
 		posInfo->castling &= 0b1100 >> (posInfo->whiteOnMove * 2);		// condition for castling is unchanged king state
+	}
+
+	bool Board::IsCheckMate() const {
+		for (int pos = 0; pos < 64; ++pos) {
+			if (!movegen::GenerateMoves(pos, posInfo, false).empty())
+				return false;
+		}
+		return true;
 	}
 }

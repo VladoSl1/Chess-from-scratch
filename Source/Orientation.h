@@ -6,9 +6,9 @@ namespace chess
 {
 	namespace orient
 	{
-		static const uint Width			= 1280;
-		static const uint Height		= 720;
-		static const float squareSide	= 80.0f;
+		static const uint Width			= 1920;
+		static const uint Height		= 1300;
+		static const float squareSide	= 160.0f;
 		static const float offsetX		= 10.0f;
 		static const float offsetY		= 10.0f;
 		static const float pieceScale	= squareSide / 320.0f;
